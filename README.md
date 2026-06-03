@@ -1,9 +1,37 @@
-<img width="1865" height="605" alt="image" src="https://github.com/user-attachments/assets/01faa89e-9ea2-4fa1-a017-bde53f19cb1c" /># DeepResearch
-一个基于Qwen的销售分析系统
+<img width="1865" height="605" alt="image" src="https://github.com/user-attachments/assets/01faa89e-9ea2-4fa1-a017-bde53f19cb1c" />
 # 销售数据 API + AI 对话服务
-![Uploading image.png…]()
 
-基于 **FastAPI + SQLAlchemy + MySQL + LangChain + Qwen** 的前后端分离项目。
+基于 **FastAPI + SQLAlchemy + MySQL + LangChain + Qwen + Redis + JWT** 的前后端分离项目。
+
+---
+
+## 📁 项目结构
+
+```
+deepresearch/
+├── .env                          # 环境变量（数据库/Redis/Qwen/JWT）
+├── README.md                     # 项目说明
+│
+├── backend/                      # 🔧 后端 — FastAPI
+│   ├── main.py                   #   入口：路由注册、CORS、JWT 中间件、/login
+│   ├── chat.py                   #   /chat 对话 + /chat/sessions 会话管理
+│   ├── agent.py                  #   ReAct Agent（Qwen + 工具调用）
+│   ├── tools.py                  #   工具函数：query_sales_data / calculate_trend
+│   ├── auth.py                   #   认证：JWT 签发/验证、角色权限、contextvars
+│   ├── memory.py                 #   Redis 持久化记忆（自动降级）
+│   ├── models.py                 #   ORM 模型（SQLAlchemy）
+│   ├── database.py               #   数据库连接
+│   ├── config.py                 #   配置加载
+│   ├── requirements.txt          #   Python 依赖
+│   └── sqltable/                 #   SQL 脚本
+│
+└── frontend/                     # 🎨 前端 — HTML/CSS/JS
+    ├── index.html                #   登录页 + 聊天页（一键切换）
+    ├── css/
+    │   └── style.css             #   现代化 UI + 登录遮罩
+    └── js/
+        └── app.js                #   JWT 认证 + 聊天交互 + 会话管理
+```
 
 ---
 
@@ -13,113 +41,120 @@
 
 - Python 3.10+
 - MySQL 5.7 / 8.0
-- 阿里云 DashScope API Key（用于 Qwen 大模型）
+- Redis（可选，不可用时自动降级内存存储）
+- 阿里云 DashScope API Key
 
-### 2. 克隆项目 & 创建虚拟环境
+### 2. 安装依赖
 
 ```bash
 cd deepresearch
 python -m venv .venv
-
-# Windows
-.venv\Scripts\activate
-
-# macOS / Linux
-source .venv/bin/activate
-```
-
-### 3. 安装依赖
-
-```bash
+.venv\Scripts\activate      # Windows
 pip install -r backend/requirements.txt
 ```
 
-### 4. 配置环境变量
-
-编辑 `.env` 文件，填入真实信息：
+### 3. 配置 `.env`
 
 ```env
-# ===== 数据库配置 =====
 DB_HOST=localhost
 DB_PORT=3306
-DB_USER=
-DB_PASSWORD=你的数据库密码
-DB_NAME=
+DB_USER=root
+DB_PASSWORD=你的密码
+DB_NAME=demo
 
-# ===== Qwen 大模型配置 =====
-# 在 https://dashscope.console.aliyun.com/ 申请
-QWEN_API_KEY=sk-你的真实key
-# 可选模型: qwen-turbo / qwen-plus / qwen-max
+QWEN_API_KEY=sk-你的key
 QWEN_MODEL=qwen-plus
+LLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+JWT_SECRET=你的JWT密钥
 ```
 
-### 5. 初始化数据库
+### 4. 初始化数据库
 
 ```bash
-# 登录 MySQL 执行建表脚本
 mysql -u root -p < backend/sqltable/01_create_table.sql
 mysql -u root -p < backend/sqltable/02_insert_test_data.sql
 ```
 
-### 6. 启动后端
+### 5. 启动 Redis（可选）
 
-> ⚠️ 必须在 `backend/` 目录下运行，因为 `main.py` 已移至该目录。
+```bash
+# Windows 安装后自动启动，或手动：
+"C:\Program Files\Redis\redis-server.exe"
+```
+
+### 6. 启动后端
 
 ```bash
 cd backend
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-| 地址 | 说明 |
-|------|------|
-| `http://localhost:8000/docs` | Swagger 接口文档 |
-| `http://localhost:8000/redoc` | ReDoc 接口文档 |
-
 ### 7. 启动前端
-
-新开一个终端：
 
 ```bash
 cd frontend
 python -m http.server 5500
 ```
 
-打开浏览器访问 `http://localhost:5500`
+打开 `http://localhost:5500`
+
+---
+
+## 🔐 登录认证
+
+| 用户名 | 密码 | 角色 | 数据权限 |
+|--------|------|------|----------|
+| `admin` | `admin123` | 管理员 | 全部大区 |
+| `east` | `east123` | 华东区专员 | 仅华东 |
+| `south` | `south123` | 华南区专员 | 仅华南 |
+| `north` | `north123` | 华北区专员 | 仅华北 |
+| `central` | `central123` | 华中区专员 | 仅华中 |
+| `west` | `west123` | 西南区专员 | 仅西南 |
+| `northwest` | `nw123` | 西北区专员 | 仅西北 |
+
+> 前端点登录遮罩上的快捷按钮即可一键填充。
 
 ---
 
 ## 🔌 API 接口
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/health` | 健康检查，测试数据库连接 |
-| POST | `/chat` | AI 对话，传入消息返回大模型回复 |
-
-### `/chat` 请求示例
-
-```bash
-curl -X POST http://localhost:8000/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message": "你好"}'
-```
-
-### `/chat` 响应示例
-
-```json
-{
-  "reply": "你好！我是Qwen大模型，有什么可以帮你的吗？"
-}
-```
+| 方法 | 路径 | 认证 | 说明 |
+|------|------|------|------|
+| POST | `/login` | 无 | 登录获取 JWT Token |
+| GET | `/health` | 无 | 健康检查 |
+| POST | `/chat` | Bearer | ReAct Agent 对话（带角色权限） |
+| GET | `/chat/sessions` | Bearer | 会话列表 |
+| GET | `/chat/session/{id}` | Bearer | 会话统计 |
+| GET | `/chat/session/{id}/messages` | Bearer | 会话消息 |
+| DELETE | `/chat/session/{id}` | Bearer | 删除会话 |
 
 ---
 
-## 🧪 验证方式
+## 🧪 验证权限
 
-| 方式 | 操作 |
-|------|------|
-| **Swagger UI** | 打开 `http://localhost:8000/docs` → `POST /chat` → Try it out |
-| **前端页面** | 打开 `http://localhost:5500` → 输入消息 → 回车发送 |
-| **curl** | `curl -X POST http://localhost:8000/chat -H "Content-Type: application/json" -d '{"message":"你好"}'` |
+```bash
+# 1. 登录
+curl -X POST http://localhost:8000/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"east","password":"east123"}'
+# → 得到 access_token
+
+# 2. 华东专员查华北 → 被拒
+curl -X POST http://localhost:8000/chat \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"message":"查华北区销售额"}'
+
+# 3. 华东专员查华东 → 通过
+curl -X POST http://localhost:8000/chat \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"message":"查华东区销售额"}'
+```
 
 ---
 
@@ -130,20 +165,20 @@ curl -X POST http://localhost:8000/chat \
 | 后端框架 | FastAPI |
 | ORM | SQLAlchemy 2.0 |
 | 数据库 | MySQL |
-| AI 模型 | Qwen（阿里云 DashScope） |
-| LLM 框架 | LangChain |
-| 前端 | 原生 HTML / CSS / JavaScript |
-| CORS | 前后端分离，跨域通信 |
+| 缓存/记忆 | Redis（自动降级内存） |
+| AI 模型 | Qwen（DashScope） |
+| Agent 框架 | LangChain 1.3+ (create_agent) |
+| 认证 | JWT (pyjwt) + contextvars |
+| 前端 | HTML / CSS / JS（零框架） |
 
 ---
 
 ## ⚠️ 常见问题
 
-### `ModuleNotFoundError: No module named 'pymysql'`
-虚拟环境中缺少依赖，执行 `pip install -r backend/requirements.txt`。
-
-### `QWEN_API_KEY` 未生效
-确保 `.env` 文件在项目根目录，且 `config.py` 能正确读取（依赖 `python-dotenv`）。
-
-### 前端无法调用后端
-检查后端是否启动在 `8000` 端口，前端 `js/app.js` 中的 `API_BASE` 是否匹配。
+| 问题 | 解决 |
+|------|------|
+| `No module named 'pymysql'` | `pip install -r backend/requirements.txt` |
+| Redis 连接失败 | 安装并启动 Redis，或使用内存降级模式 |
+| `Could not import module "main"` | 必须在 `backend/` 目录下运行 uvicorn |
+| 前端无法调用后端 | 检查 `8000` 端口，检查 CORS |
+| Token 过期 | 重新登录获取新 Token |
