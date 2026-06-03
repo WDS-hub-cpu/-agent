@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 智能助手 · Sales Chat</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- ========== 登录遮罩层 ========== -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-card">
+            <div class="login-logo">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                    <line x1="9" y1="9" x2="9.01" y2="9"/>
+                    <line x1="15" y1="9" x2="15.01" y2="9"/>
+                </svg>
+            </div>
+            <h2>登录 AI 销售助手</h2>
+            <p class="login-subtitle">请输入您的账号密码</p>
+            <form class="login-form" onsubmit="handleLogin(event)">
+                <div class="login-field">
+                    <label>用户名</label>
+                    <input type="text" id="loginUsername" placeholder="请输入用户名" required autocomplete="username">
+                </div>
+                <div class="login-field">
+                    <label>密码</label>
+                    <input type="password" id="loginPassword" placeholder="请输入密码" required autocomplete="current-password">
+                </div>
+                <p class="login-error" id="loginError"></p>
+                <button type="submit" class="login-btn" id="loginBtn">登 录</button>
+            </form>
+            <div class="login-hint">
+                <p>测试账号</p>
+                <div class="login-accounts">
+                    <span onclick="fillLogin('admin','admin123')">管理员</span>
+                    <span onclick="fillLogin('east','east123')">华东专员</span>
+                    <span onclick="fillLogin('south','south123')">华南专员</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                        <path d="M2 17l10 5 10-5"/>
+                        <path d="M2 12l10 5 10-5"/>
+                    </svg>
+                    <span>AI 助手</span>
+                </div>
+            </div>
+            <button class="new-chat-btn" onclick="newChat()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                新对话
+            </button>
+
+            <!-- 对话历史列表 -->
+            <nav class="history-list" id="historyList">
+                <p class="history-hint">暂无对话记录</p>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-info" id="userInfo">
+                    <span class="user-avatar" id="userAvatar"></span>
+                    <span class="user-name" id="userName"></span>
+                </div>
+                <button class="logout-btn" onclick="logout()" title="退出登录">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                </button>
+            </div>
+        </aside>
+
+        <!-- 主聊天区域 -->
+        <main class="chat-main">
+            <!-- 顶部状态栏 -->
+            <header class="chat-header">
+                <h1>💬 AI 智能助手</h1>
+                <span class="model-badge">Qwen-Plus</span>
+            </header>
+
+            <!-- 消息列表 -->
+            <div class="chat-messages" id="chatMessages">
+                <!-- 欢迎消息 -->
+                <div class="welcome-card">
+                    <div class="welcome-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                            <line x1="9" y1="9" x2="9.01" y2="9"/>
+                            <line x1="15" y1="9" x2="15.01" y2="9"/>
+                        </svg>
+                    </div>
+                    <h2>你好，我是你的 AI 助手</h2>
+                    <p>基于 Qwen 大模型，可以查询销售数据、分析趋势，随时为你解答</p>
+                    <div class="suggestions">
+                        <button class="suggestion-chip" onclick="sendSuggestion('帮我查一下各区域的销售总额')">📊 各区域销售总额</button>
+                        <button class="suggestion-chip" onclick="sendSuggestion('最近销售趋势怎么样？')">📈 最近销售趋势</button>
+                        <button class="suggestion-chip" onclick="sendSuggestion('哪个产品类别利润最高？')">🏆 利润最高类别</button>
+                        <button class="suggestion-chip" onclick="sendSuggestion('请用一句话介绍你自己')">💡 介绍一下你自己</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="chat-input-area">
+                <div class="input-wrapper">
+                    <textarea
+                        id="messageInput"
+                        placeholder="输入你的消息，按 Enter 发送..."
+                        rows="1"
+                        onkeydown="handleKeyDown(event)"
+                    ></textarea>
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="发送消息">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"/>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
