@@ -1,6 +1,7 @@
 <img width="1865" height="605" alt="image" src="https://github.com/user-attachments/assets/01faa89e-9ea2-4fa1-a017-bde53f19cb1c" /># DeepResearch
 一个基于Qwen的销售分析系统
 # 销售数据 API + AI 对话服务
+![Uploading image.png…]()
 
 基于 **FastAPI + SQLAlchemy + MySQL + LangChain + Qwen** 的前后端分离项目。
 
